@@ -2,15 +2,15 @@ package com.sohoffice.security.authorization.evaluation;
 
 import com.sohoffice.security.authorization.AuthContext;
 import com.sohoffice.security.authorization.AuthContextContributor;
-import com.sohoffice.security.authorization.util.WithAccessor;
-import com.sohoffice.security.authorization.util.AttributesWithAccessor;
-import com.sohoffice.security.authorization.util.Expression;
+import com.sohoffice.security.authorization.util.*;
+import io.soabase.recordbuilder.core.RecordBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * An evaluator that can evaluate the expression incrementally.
@@ -25,64 +25,232 @@ import java.util.stream.Collectors;
  * </ol>
  *
  * @param <T> Expression implementation type
+ * @param <R> The evaluation result type
  */
-class IncrementalEvaluator<T extends Expression<T>> {
+class IncrementalEvaluator<T extends Expression<T>, R> {
   private static final Logger logger = LoggerFactory.getLogger(IncrementalEvaluator.class);
 
   private final WithAccessor<AuthContext, Set<T>> targetsAccessor;
   private final AttributesWithAccessor<AuthContext> attributesAccessor;
   private final List<AuthContextContributor> contributors;
+  private final EvaluationResultAdapter<T, R> evaluationResultAdapter;
 
   public IncrementalEvaluator(@NotNull WithAccessor<AuthContext, Set<T>> evaluationTargetsAccessor,
                               @NotNull AttributesWithAccessor<AuthContext> attributesAccessor,
-                              @NotNull List<AuthContextContributor> contributors) {
+                              @NotNull List<AuthContextContributor> contributors,
+                              @NotNull IncrementalEvaluator.EvaluationResultAdapter<T, R> evaluationResultAdapter) {
     this.targetsAccessor = evaluationTargetsAccessor;
     this.attributesAccessor = attributesAccessor;
     this.contributors = contributors;
+    this.evaluationResultAdapter = evaluationResultAdapter;
   }
 
-  public EvaluationResult<T> evaluate(AuthContext source) {
+  public Result<T, R> evaluate(final AuthContext source) {
+    // Create an array of lazily evaluation suppliers. The first the evaluate any result become the final result.
+    List<InternalEvaluator<T>> evaluationFunctions = new ArrayList<>();
+
+    // static expression are added to evaluated directly.
     Set<T> sourceTargets = targetsAccessor.get(source);
     Map<Boolean, Set<T>> initialClassification = sourceTargets.stream()
             .collect(Collectors.partitioningBy(Expression::isFullyEnhanced, Collectors.toSet()));
 
-    // static expression are added to evaluated directly.
-    Set<T> evaluated = new HashSet<>(initialClassification.getOrDefault(Boolean.TRUE, Collections.emptySet()));
-    Set<T> sourceToBeEvaluated = initialClassification.getOrDefault(Boolean.FALSE, Collections.emptySet());
-    Set<T> toBeEvaluated = Collections.emptySet();
-    for (AuthContextContributor contributor : contributors) {
-      Set<Map.Entry<String, String>> attributes = attributesAccessor.get(source);
-      // first enhance the left over of last round
+    // First evaluation function evaluates static expressions.
+    evaluationFunctions.add(context -> {
+      // 1. Classify enhanced and not enhanced
+      //    Already done above, skipped.
+
+      // 2. Update classified expressions to context
+      context = context.withExpressions(initialClassification);
+      // 3. Evaluate the enhanced expression
+      return evaluateEnhanced(context, initialClassification);
+    });
+
+    contributors.forEach(contributor -> evaluateContributor(contributor).forEach(evaluationFunctions::add));
+
+    InternalContext<T> internalContext =
+            new InternalContext<>(source, new HashSet<>(), new HashSet<>(),
+                                  initialClassification.getOrDefault(Boolean.FALSE, Collections.emptySet()));
+    for (InternalEvaluator<T> evaluator : evaluationFunctions) {
+      logger.debug("---- 1, Requests: {}.", internalContext.authContext.request());
+      InternalResult<T> result = evaluator.evaluate(internalContext);
+      // Return if the evaluation result is not null
+      if (result.result() != null) {
+        return new Result<>(evaluationResultAdapter.resultMapper(result.result()),
+                            result.context().authContext(),
+                            result.context().toBeEnhanced());
+      }
+      AuthContext authContext = result.context().authContext();
+      authContext = targetsAccessor.with(authContext, result.context().enhanced());
+      internalContext = result.context().withAuthContext(authContext);
+      logger.debug("---- 2, Requests: {}.", internalContext.authContext.request());
+    }
+
+    return new Result<>(null, internalContext.authContext(), internalContext.toBeEnhanced());
+  }
+
+  private @NotNull Stream<InternalEvaluator<T>> evaluateContributor(AuthContextContributor contributor) {
+    return Stream.of(this::evaluatePopulateAttributes,
+                     context -> doEvaluateContributor(contributor, context));
+  }
+
+  /**
+   * Use the attributes in the context to evaluate the not enhanced expressions.
+   *
+   * @param context Evaluation context
+   * @return The evaluation result
+   */
+  private @NotNull InternalResult<T> evaluatePopulateAttributes(InternalContext<T> context) {
+    // A. Enhance the left over of last round
+    AuthContext authContext = context.authContext();
+    Set<Map.Entry<String, String>> attributes = attributesAccessor.get(authContext);
+    Collection<T> toBeEnhanced = context.toBeEnhanced();
+    if (logger.isTraceEnabled()) {
+      logger.trace("Step A, toBeEnhanced: {}, attributes: {}.", toBeEnhanced.size(), attributes.size());
+    }
+    // A.1. Enhance expression and classify the result
+    Map<Boolean, Set<T>> enhancedMap = toBeEnhanced.stream()
+            .flatMap(it -> it.enhance(attributes))
+            .collect(Collectors.groupingBy(Expression::isFullyEnhanced, HashMap::new, Collectors.toSet()));
+
+    // A.2. Update classified expressions to context
+    context = context.withExpressions(enhancedMap);
+    // A.3. Evaluate the enhanced expression
+    return evaluateEnhanced(context, enhancedMap);
+  }
+
+  /**
+   * Actually call the contributor to contribute attributes and do evaluation thereafter
+   *
+   * @param contributor Contributor instance
+   * @param context     evaluation context
+   * @return The evaluation result
+   */
+  private @NotNull InternalResult<T> doEvaluateContributor(AuthContextContributor contributor,
+                                                           InternalContext<T> context) {
+    AuthContext authContext = context.authContext();
+    Set<Map.Entry<String, String>> attributes = attributesAccessor.get(authContext);
+    // B. Contributor contributes
+    AuthContextContributor.Result contributed = contributor.contribute(authContext);
+    attributes.addAll(contributed.attributes());
+    if (logger.isDebugEnabled()) {
+      logger.debug("Step B, Contributor {} attributes count: {} -> {}.", contributed.contributorId(),
+                   contributed.attributes().size(), attributes.size());
       if (logger.isTraceEnabled()) {
-        logger.trace("Step 0, toBeEvaluated: {}, attributes: {}.", toBeEvaluated.size(), attributes.size());
-      }
-      Map<Boolean, List<T>> enhanced1 = toBeEvaluated.stream()
-              .flatMap(it -> it.enhance(attributes))
-              .collect(Collectors.groupingBy(Expression::isFullyEnhanced));
-      evaluated.addAll(enhanced1.getOrDefault(Boolean.TRUE, Collections.emptyList()));
-      toBeEvaluated = new HashSet<>(enhanced1.getOrDefault(Boolean.FALSE, Collections.emptyList()));
-      // Add the new attributes back to the context
-      AuthContextContributor.Result contributed = contributor.contribute(source);
-      attributes.addAll(contributed.attributes());
-      if (logger.isDebugEnabled()) {
-        logger.debug("Step 1, Contributor {} attributes: {} -> {}.", contributed.contributorId(),
-                     contributed.attributes().size(), attributes.size());
-        if (logger.isTraceEnabled()) {
-          logger.debug("Step 1, contributed attributes: {}", contributed.attributes());
-        }
-      }
-      attributesAccessor.with(source, attributes);
-      // then enhance the context with all attributes.
-      Map<Boolean, List<T>> enhanced = sourceToBeEvaluated.stream()
-              .flatMap(it -> it.enhance(attributes))
-              .collect(Collectors.groupingBy(Expression::isFullyEnhanced));
-      evaluated.addAll(enhanced.getOrDefault(Boolean.TRUE, Collections.emptyList()));
-      toBeEvaluated.addAll(enhanced.getOrDefault(Boolean.FALSE, Collections.emptyList()));
-      if (logger.isDebugEnabled()) {
-        logger.debug("Step 2, evaluated: {}, toBeEvaluated: {}.", evaluated.size(), toBeEvaluated.size());
+        logger.debug("        Attributes: {}", contributed.attributes());
       }
     }
-    return new EvaluationResult<>(targetsAccessor.with(source, evaluated), toBeEvaluated);
+    // B.1. Update attribute to AuthContext
+    authContext = attributesAccessor.with(authContext, attributes);
+    context = context.withAuthContext(authContext);
+
+    // C. Enhance the context with all attributes.
+    // C.1. Classify enhanced and not enhanced
+    Map<Boolean, Set<T>> enhancedMap = context.initToBeEnhanced().stream()
+            .flatMap(it -> it.enhance(attributes))
+            .collect(Collectors.groupingBy(Expression::isFullyEnhanced, HashMap::new, Collectors.toSet()));
+    Set<T> enhanced2 = enhancedMap.getOrDefault(Boolean.TRUE, Collections.emptySet());
+    // C.2. Update classified expressions to context
+    context = context.withExpressions(enhancedMap);
+    if (logger.isDebugEnabled()) {
+      logger.debug("Step C, enhanced: {}, toBeEnhanced: {}.", enhanced2.size(), context.toBeEnhanced().size());
+    }
+    // C.3. Evaluate the enhanced expression
+    return evaluateEnhanced(context, enhancedMap);
+  }
+
+  private InternalResult<T> evaluateEnhanced(InternalContext<T> context,
+                                             Map<Boolean, Set<T>> expressionMap) {
+    Set<T> enhanced = expressionMap.getOrDefault(Boolean.TRUE, Collections.emptySet());
+    Either<T, T> result = evaluationResultAdapter.completed(enhanced);
+    logger.debug("Step D, evaluated to: {}", result);
+    AuthContext authContext = targetsAccessor.with(context.authContext(), enhanced);
+    context = context.withExpressions(expressionMap)
+            .withAuthContext(authContext);
+
+    if (result == null) {
+      return new InternalResult<>(null, context);
+    }
+    return new InternalResult<>(result, context);
+  }
+
+  /**
+   * Adapter interface to determine whether the evaluation is completed and mapping to result
+   *
+   * @param <T>
+   * @param <R>
+   */
+  public interface EvaluationResultAdapter<T extends Expression<T>, R> {
+    default Either<T, T> completed(Collection<T> expressions) {
+      return expressions.stream()
+              .map(it -> Map.entry(it, this.completedOne(it)))
+              .filter(it -> it.getValue() != TriStateBoolean.UNDEFINED)
+              .findFirst()
+              .map(it -> new Either<>(it.getValue() == TriStateBoolean.TRUE, it.getKey(), it.getKey()))
+              .orElse(null);
+    }
+
+    TriStateBoolean completedOne(T expression);
+
+    R resultMapper(Either<T, T> expression);
+  }
+
+  /**
+   * Internal evaluation context
+   *
+   * @param authContext      Auth context
+   * @param toBeEnhanced     The accumulated expressions to be enhanced.
+   * @param initToBeEnhanced The original expressions to be enhanced.
+   * @param <T>
+   */
+  private record InternalContext<T>(AuthContext authContext,
+                                    Set<T> enhanced,
+                                    Set<T> toBeEnhanced,
+                                    Set<T> initToBeEnhanced) {
+
+    public InternalContext {
+      toBeEnhanced = Collections.unmodifiableSet(toBeEnhanced);
+      initToBeEnhanced = Collections.unmodifiableSet(initToBeEnhanced);
+    }
+
+    public InternalContext<T> withAuthContext(AuthContext context) {
+      return new InternalContext<>(context, enhanced(), toBeEnhanced(), initToBeEnhanced());
+    }
+
+    public InternalContext<T> withExpressions(Map<Boolean, Set<T>> enhanceMap) {
+      return withExpressions(enhanceMap.getOrDefault(Boolean.TRUE, Collections.emptySet()),
+              enhanceMap.getOrDefault(Boolean.FALSE, Collections.emptySet()));
+    }
+
+    public InternalContext<T> withExpressions(Set<T> enhanced2, Set<T> toBeEnhanced2) {
+      Set<T> enhancedNew = new HashSet<>(enhanced());
+      enhancedNew.addAll(enhanced2);
+      Set<T> toBeEnhancedNew = new HashSet<>(toBeEnhanced());
+      toBeEnhancedNew.addAll(toBeEnhanced2);
+      return new InternalContext<>(authContext(), enhancedNew, toBeEnhancedNew, initToBeEnhanced());
+    }
+  }
+
+  /**
+   * Internal and intermediate result produced by {@link InternalEvaluator}
+   *
+   * @param result  The evaluated result. Null if nothing is found, otherwise the result.
+   * @param context The context after evaluation.
+   * @param <T>
+   */
+  private record InternalResult<T extends Expression<T>>(
+          Either<T, T> result,
+          InternalContext<T> context
+  ) {
+  }
+
+  /**
+   * Internal evaluator to simplifies complex java.util.Function declaration.
+   *
+   * @param <T>
+   */
+  @FunctionalInterface
+  private interface InternalEvaluator<T extends Expression<T>> {
+    InternalResult<T> evaluate(InternalContext<T> context);
   }
 
   /**
@@ -92,9 +260,12 @@ class IncrementalEvaluator<T extends Expression<T>> {
    * @param notEvaluated The expressions that are not fully evaluated.
    * @param <T>          Expression implementation type
    */
-  public record EvaluationResult<T extends Expression<T>>(
+  @RecordBuilder
+  public record Result<T extends Expression<T>, R>(
+          R result,
           AuthContext context,
-          Set<T> notEvaluated
+          Collection<T> notEvaluated
   ) {
   }
+
 }

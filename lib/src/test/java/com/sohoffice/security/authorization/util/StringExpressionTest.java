@@ -12,7 +12,7 @@ class StringExpressionTest {
   private static final Map.Entry<String, String> context2 = Map.entry("foo", "bar");
 
   @Test
-  void test_isFullyEnhanced() {
+  void isFullyEnhanced() {
     StringExpression undertest1 = new StringExpression("Hello, ${name}!", null);
     assertFalse(undertest1.isFullyEnhanced());
 
@@ -26,7 +26,7 @@ class StringExpressionTest {
   }
 
   @Test
-  void test_enhance() {
+  void enhance() {
     StringExpression undertest1 = new StringExpression("Hello, ${name}!", null);
     assertEquals("Hello, ${name}!", undertest1.getValue());
     assertFalse(undertest1.isFullyEnhanced());

@@ -12,6 +12,10 @@
         <appender-ref ref="CONSOLE"/>
     </logger>
 
+    <logger name="ch.qos.logback" level="error">
+        <appender-ref ref="CONSOLE"/>
+    ß</logger>
+
     <root level="info">
         <appender-ref ref="CONSOLE"/>
     </root>

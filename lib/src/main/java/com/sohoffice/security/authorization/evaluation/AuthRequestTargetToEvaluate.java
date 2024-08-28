@@ -19,12 +19,12 @@ public record AuthRequestTargetToEvaluate(
 
   @Override
   public AuthRequestTargetToEvaluate enhance(Map.Entry<String, String> attr) {
-    return new AuthRequestTargetToEvaluate(resource.enhance(attr), action.enhance(attr));
+    return new AuthRequestTargetToEvaluate(resource().enhance(attr), action().enhance(attr));
   }
 
   @Override
   public String getValue() {
-    return resource.getValue() + "\t" + action.getValue();
+    return resource().getValue() + "\t" + action().getValue();
   }
 
   @Override
@@ -34,6 +34,6 @@ public record AuthRequestTargetToEvaluate(
 
   @Override
   public boolean isFullyEnhanced() {
-    return resource().isFullyEnhanced() && action.isFullyEnhanced();
+    return fullyEnhanced();
   }
 }

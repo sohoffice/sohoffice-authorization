@@ -1,9 +1,7 @@
 package com.sohoffice.security.authorization.evaluation;
 
 import com.sohoffice.security.authorization.*;
-import com.sohoffice.security.authorization.util.AttributesWithAccessor;
-import com.sohoffice.security.authorization.util.StringExpression;
-import com.sohoffice.security.authorization.util.WithAccessor;
+import com.sohoffice.security.authorization.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,7 +21,7 @@ public class EnhanceRequestPipelineStep implements AuthPipelineStep {
   public AuthPipelineStepResult execute(AuthContext context) {
     // Use an IncrementalEvaluator to read {@link StringExpressionTuple} from the context and
     // enhance with attributes from contributors.
-    IncrementalEvaluator<AuthRequestTargetToEvaluate> evaluator = new IncrementalEvaluator<>(
+    IncrementalEvaluator<AuthRequestTargetToEvaluate, Void> evaluator = new IncrementalEvaluator<>(
             new WithAccessor<>(ctx -> ctx.request().resourceRequests().stream()
                     .map(it -> new AuthRequestTargetToEvaluate(new StringExpression(it.resource()),
                                                                new StringExpression(it.action())))
@@ -34,8 +32,9 @@ public class EnhanceRequestPipelineStep implements AuthPipelineStep {
               return ctx.withRequest(new AuthRequest(results));
             }),
             new AttributesWithAccessor<>(AuthContext::requestAttributes, AuthContext::withRequestAttributes),
-            context.requestContributors());
-    IncrementalEvaluator.EvaluationResult<AuthRequestTargetToEvaluate> result = evaluator.evaluate(context);
+            context.requestContributors(),
+            new Adapter());
+    IncrementalEvaluator.Result<AuthRequestTargetToEvaluate, Void> result = evaluator.evaluate(context);
 
     if (!result.notEvaluated().isEmpty()) {
       logger.warn("Some request contributors are not evaluated: {}", result.notEvaluated());
@@ -45,5 +44,17 @@ public class EnhanceRequestPipelineStep implements AuthPipelineStep {
     // context is enhanced with the new targets.
     return new AuthPipelineStepResult(AuthPipelineStepResultStatus.CONTINUE,
                                       result.context());
+  }
+
+  private static class Adapter implements IncrementalEvaluator.EvaluationResultAdapter<AuthRequestTargetToEvaluate, Void> {
+    @Override
+    public TriStateBoolean completedOne(AuthRequestTargetToEvaluate expression) {
+      return TriStateBoolean.UNDEFINED;
+    }
+
+    @Override
+    public Void resultMapper(Either<AuthRequestTargetToEvaluate, AuthRequestTargetToEvaluate> expression) {
+      return null;
+    }
   }
 }
