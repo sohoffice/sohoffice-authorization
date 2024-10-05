@@ -35,7 +35,7 @@ public class StringMatchable {
     return patterned;
   }
 
-  public boolean match(String target) {
+  public boolean matches(String target) {
     if (!patterned) {
       return Objects.equals(value, target);
     }

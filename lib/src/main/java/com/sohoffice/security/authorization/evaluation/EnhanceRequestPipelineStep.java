@@ -22,7 +22,7 @@ public class EnhanceRequestPipelineStep implements AuthPipelineStep {
     // Use an IncrementalEvaluator to read {@link StringExpressionTuple} from the context and
     // enhance with attributes from contributors.
     IncrementalEvaluator<AuthRequestTargetToEvaluate, Void> evaluator = new IncrementalEvaluator<>(
-            new WithAccessor<>(ctx -> ctx.request().resourceRequests().stream()
+            new WithAccessor<>(ctx -> ctx.request().resourceTargets().stream()
                     .map(it -> new AuthRequestTargetToEvaluate(new StringExpression(it.resource()),
                                                                new StringExpression(it.action())))
                     .collect(Collectors.toSet()), (ctx, targets) -> {
@@ -42,8 +42,7 @@ public class EnhanceRequestPipelineStep implements AuthPipelineStep {
 
     // The status should always be CONTINUE, as this is in the request stage where data is collected.
     // context is enhanced with the new targets.
-    return new AuthPipelineStepResult(AuthPipelineStepResultStatus.CONTINUE,
-                                      result.context());
+    return new AuthPipelineStepResult(AuthPipelineStepResultStatus.CONTINUE, result.context());
   }
 
   private static class Adapter implements IncrementalEvaluator.EvaluationResultAdapter<AuthRequestTargetToEvaluate, Void> {

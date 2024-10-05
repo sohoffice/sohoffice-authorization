@@ -1,11 +1,9 @@
 <configuration>
 
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
-        <layout class="ch.qos.logback.classic.PatternLayout">
-            <Pattern>
-                %d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n
-            </Pattern>
-        </layout>
+        <encoder>
+            <Pattern>%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n</Pattern>
+        </encoder>
     </appender>
 
     <logger name="com.sohoffice.security.authorization" level="trace" additivity="false">
@@ -14,7 +12,7 @@
 
     <logger name="ch.qos.logback" level="error">
         <appender-ref ref="CONSOLE"/>
-    ß</logger>
+    </logger>
 
     <root level="info">
         <appender-ref ref="CONSOLE"/>

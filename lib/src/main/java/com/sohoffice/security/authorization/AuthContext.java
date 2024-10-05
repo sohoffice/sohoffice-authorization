@@ -1,6 +1,6 @@
 package com.sohoffice.security.authorization;
 
-import com.sohoffice.security.authorization.io.AuthDocument;
+import com.sohoffice.security.authorization.evaluation.AuthStatementToEvaluate;
 import com.sohoffice.security.authorization.io.AuthStatement;
 import io.soabase.recordbuilder.core.RecordBuilder;
 import org.jetbrains.annotations.NotNull;
@@ -19,8 +19,8 @@ import java.util.function.Supplier;
  * @param authStatements        The auth statements provided from the supplier.
  * @param request               The evaluated application resource object to be requested.
  * @param requestContributors   Contributors to enhance the request.
- * @param claimAttributes       The claim attributes carried by the request.
- * @param claimContributors     Contributors to enhance the claim attributes.
+ * @param profileAttributes     The claim attributes carried by the request.
+ * @param profileContributors   Contributors to enhance the claim attributes.
  */
 @RecordBuilder
 public record AuthContext(
@@ -28,7 +28,7 @@ public record AuthContext(
         Set<String> principals,
         @NotNull
         Supplier<List<? extends AuthStatement>> authStatementProvider,
-        List<? extends AuthStatement> authStatements,
+        Set<AuthStatementToEvaluate> authStatements,
         @NotNull
         AuthRequest request,
         @NotNull
@@ -36,12 +36,12 @@ public record AuthContext(
         @NotNull
         List<AuthContextContributor> requestContributors,
         @NotNull
-        Set<Map.Entry<String, String>> claimAttributes,
+        Set<Map.Entry<String, String>> profileAttributes,
         @NotNull
-        List<AuthContextContributor> claimContributors
+        List<AuthContextContributor> profileContributors
 ) implements AuthContextBuilder.With {
 
-  public Set<AuthRequestTarget> requestResources() {
-    return request.resourceRequests();
+  public Set<AuthRequestTarget> requestTargets() {
+    return request.resourceTargets();
   }
 }

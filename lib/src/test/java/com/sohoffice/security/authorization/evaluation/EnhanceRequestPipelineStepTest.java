@@ -28,15 +28,62 @@ class EnhanceRequestPipelineStepTest {
    * Validate static request target to prove the interaction with {@link IncrementalEvaluator} is good.
    */
   @Test
-  void execute_WhenStaticRequestTarget_ThenReturnTheOriginal() {
+  void execute_WhenStaticRequestTarget_ThenReturnStatic() {
     AuthContext context = AuthContextBuilder.builder()
             .request(new AuthRequest(Set.of(new AuthRequestTarget("resource", "action"))))
             .requestContributors(List.of(contributor1, contributor2))
             .requestAttributes(new HashSet<>())
             .build();
     AuthPipelineStepResult result = underTest.execute(context);
-    assertThat(result.context().requestResources())
+    assertThat(result.context().requestTargets())
             .containsOnly(new AuthRequestTarget("resource", "action"));
+    assertThat(result.status())
+            .isEqualTo(AuthPipelineStepResultStatus.CONTINUE);
+  }
+
+  @Test
+  void execute_WhenResolvableRequestTarget_ThenReturnTheResolved() {
+    AuthContext context = AuthContextBuilder.builder()
+            .request(new AuthRequest(Set.of(new AuthRequestTarget("resources/${foo}", "action1"))))
+            .requestContributors(List.of(contributor1, contributor2))
+            .requestAttributes(new HashSet<>())
+            .build();
+    AuthPipelineStepResult result = underTest.execute(context);
+    assertThat(result.context().requestTargets())
+            .containsOnly(new AuthRequestTarget("resources/bar", "action1"));
+    assertThat(result.status())
+            .isEqualTo(AuthPipelineStepResultStatus.CONTINUE);
+  }
+
+  @Test
+  void execute_WhenNonResolvableRequestTarget_ThenReturnEmpty() {
+    AuthContext context = AuthContextBuilder.builder()
+            .request(new AuthRequest(Set.of(new AuthRequestTarget("names/${non-resolvable-1}", "action1"),
+                                            new AuthRequestTarget("names/${non-resolvable-2}", "action2"))))
+            .requestContributors(List.of(contributor1, contributor2))
+            .requestAttributes(new HashSet<>())
+            .build();
+    AuthPipelineStepResult result = underTest.execute(context);
+    assertThat(result.context().requestTargets())
+            .isEmpty();
+    assertThat(result.status())
+            .isEqualTo(AuthPipelineStepResultStatus.CONTINUE);
+  }
+
+  @Test
+  void execute_WhenMixedRequestTarget_ThenReturnResolvedAndStatic() {
+    AuthContext context = AuthContextBuilder.builder()
+            .request(new AuthRequest(Set.of(new AuthRequestTarget("resources/${foo}", "action1"),
+                                            new AuthRequestTarget("names/${not-resolvable}", "action2"),
+                                            new AuthRequestTarget("names/${name}", "action3"))))
+            .requestContributors(List.of(contributor1, contributor2))
+            .requestAttributes(new HashSet<>())
+            .build();
+    AuthPipelineStepResult result = underTest.execute(context);
+    assertThat(result.context().requestTargets())
+            .containsOnly(new AuthRequestTarget("resources/bar", "action1"),
+                          new AuthRequestTarget("names/world", "action3"),
+                          new AuthRequestTarget("names/world1", "action3"));
     assertThat(result.status())
             .isEqualTo(AuthPipelineStepResultStatus.CONTINUE);
   }

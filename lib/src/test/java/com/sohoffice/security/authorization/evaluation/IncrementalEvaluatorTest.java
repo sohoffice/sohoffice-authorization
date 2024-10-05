@@ -19,7 +19,7 @@ class IncrementalEvaluatorTest {
                                             Set.of(Map.entry("foo", "bar"), Map.entry("name", "world1")));
 
   IncrementalEvaluator<AuthRequestTargetToEvaluate, AuthRequestTargetToEvaluate> underTestAlwaysContinue = new IncrementalEvaluator<>(
-          new WithAccessor<>(ctx -> ctx.request().resourceRequests().stream()
+          new WithAccessor<>(ctx -> ctx.request().resourceTargets().stream()
                   .map(it -> new AuthRequestTargetToEvaluate(new StringExpression(it.resource()),
                                                              new StringExpression(it.action())))
                   .collect(Collectors.toSet()), (ctx, targets) -> {
@@ -36,7 +36,7 @@ class IncrementalEvaluatorTest {
    * Incremental evaluator that is only successful when it sees `resources/bar`
    */
   IncrementalEvaluator<AuthRequestTargetToEvaluate, TriStateBoolean> underTestLookForMatch = new IncrementalEvaluator<>(
-          new WithAccessor<>(ctx -> ctx.request().resourceRequests().stream()
+          new WithAccessor<>(ctx -> ctx.request().resourceTargets().stream()
                   .map(it -> new AuthRequestTargetToEvaluate(new StringExpression(it.resource()),
                                                              new StringExpression(it.action())))
                   .collect(Collectors.toSet()), (ctx, targets) -> {
@@ -58,7 +58,7 @@ class IncrementalEvaluatorTest {
             .build();
     IncrementalEvaluator.Result<AuthRequestTargetToEvaluate, AuthRequestTargetToEvaluate> result1 = underTestAlwaysContinue.evaluate(
             context1);
-    assertThat(result1.context().requestResources())
+    assertThat(result1.context().requestTargets())
             .containsOnly(new AuthRequestTarget("resources/bar", "action1"));
   }
 
@@ -71,7 +71,7 @@ class IncrementalEvaluatorTest {
             .build();
     IncrementalEvaluator.Result<AuthRequestTargetToEvaluate, AuthRequestTargetToEvaluate> result2 = underTestAlwaysContinue.evaluate(
             context2);
-    assertThat(result2.context().requestResources())
+    assertThat(result2.context().requestTargets())
             .containsOnly(new AuthRequestTarget("names/world", "action2"),
                           new AuthRequestTarget("names/world1", "action2"));
   }
@@ -86,7 +86,7 @@ class IncrementalEvaluatorTest {
             .build();
     IncrementalEvaluator.Result<AuthRequestTargetToEvaluate, AuthRequestTargetToEvaluate> result3 = underTestAlwaysContinue.evaluate(
             context3);
-    assertThat(result3.context().requestResources())
+    assertThat(result3.context().requestTargets())
             .containsOnly(new AuthRequestTarget("resources/bar", "action1"),
                           new AuthRequestTarget("names/world", "action2"),
                           new AuthRequestTarget("names/world1", "action2"));
@@ -102,7 +102,7 @@ class IncrementalEvaluatorTest {
             .build();
     IncrementalEvaluator.Result<AuthRequestTargetToEvaluate, AuthRequestTargetToEvaluate> result4 = underTestAlwaysContinue.evaluate(
             context4);
-    assertThat(result4.context().requestResources())
+    assertThat(result4.context().requestTargets())
             .containsOnly(new AuthRequestTarget("resources/bar", "action1"),
                           new AuthRequestTarget("names/world", "action2"));
   }
@@ -118,7 +118,7 @@ class IncrementalEvaluatorTest {
             .evaluate(context1);
     assertThat(result1.result())
             .isEqualTo(TriStateBoolean.TRUE);
-    assertThat(result1.context().requestResources())
+    assertThat(result1.context().requestTargets())
             .containsOnly(new AuthRequestTarget("resources/bar", "action1"));
   }
 
@@ -135,7 +135,7 @@ class IncrementalEvaluatorTest {
             .evaluate(context1);
     assertThat(result1.result())
             .isEqualTo(TriStateBoolean.TRUE);
-    assertThat(result1.context().requestResources())
+    assertThat(result1.context().requestTargets())
             .containsOnly(new AuthRequestTarget("names/world", "action2"),
                           new AuthRequestTarget("names/world1", "action2"),
                           new AuthRequestTarget("resources/bar", "action1"));
