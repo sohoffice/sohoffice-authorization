@@ -47,12 +47,12 @@ public class EnhanceRequestPipelineStep implements AuthPipelineStep {
 
   private static class Adapter implements IncrementalEvaluator.EvaluationResultAdapter<AuthRequestTargetToEvaluate, Void> {
     @Override
-    public TriStateBoolean completedOne(AuthRequestTargetToEvaluate expression) {
+    public TriStateBoolean isCompleted(AuthRequestTargetToEvaluate expression) {
       return TriStateBoolean.UNDEFINED;
     }
 
     @Override
-    public Void resultMapper(Either<AuthRequestTargetToEvaluate, AuthRequestTargetToEvaluate> expression) {
+    public Void resultMapper(Either<AuthRequestTargetToEvaluate, AuthRequestTargetToEvaluate> internalResult) {
       return null;
     }
   }

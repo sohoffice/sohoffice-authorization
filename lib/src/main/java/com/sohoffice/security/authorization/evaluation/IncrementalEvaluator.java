@@ -160,10 +160,19 @@ class IncrementalEvaluator<T extends Expression<T>, R> {
 
   private InternalResult<T> evaluateEnhanced(InternalContext<T> context,
                                              Map<Boolean, Set<T>> expressionMap) {
-    Set<T> enhanced = expressionMap.getOrDefault(Boolean.TRUE, Collections.emptySet());
-    Either<T, T> result = evaluationResultAdapter.completed(enhanced);
+    Set<T> toBeEvaluated;
+    if (evaluationResultAdapter.supportPartiallyCompleted()) {
+      // evaluate all results
+      toBeEvaluated = expressionMap.values().stream()
+              .flatMap(Collection::stream)
+              .collect(Collectors.toSet());
+    } else {
+      // evaluate only completed results
+      toBeEvaluated = expressionMap.getOrDefault(Boolean.TRUE, Collections.emptySet());
+    }
+    Either<T, T> result = evaluateCompletion(toBeEvaluated);
     logger.debug("Step D, evaluated to: {}", result);
-    AuthContext authContext = targetsAccessor.with(context.authContext(), enhanced);
+    AuthContext authContext = targetsAccessor.with(context.authContext(), toBeEvaluated);
     context = context.withExpressions(expressionMap)
             .withAuthContext(authContext);
 
@@ -173,6 +182,15 @@ class IncrementalEvaluator<T extends Expression<T>, R> {
     return new InternalResult<>(result, context);
   }
 
+  private Either<T, T> evaluateCompletion(Collection<T> expressions) {
+    return expressions.stream()
+            .map(it -> Map.entry(it, evaluationResultAdapter.isCompleted(it)))
+            .filter(it -> it.getValue() != TriStateBoolean.UNDEFINED)
+            .findFirst()
+            .map(it -> new Either<>(it.getValue() == TriStateBoolean.TRUE, it.getKey(), it.getKey()))
+            .orElse(null);
+  }
+
   /**
    * Adapter interface to determine whether the evaluation is completed and mapping to result
    *
@@ -180,18 +198,29 @@ class IncrementalEvaluator<T extends Expression<T>, R> {
    * @param <R>
    */
   public interface EvaluationResultAdapter<T extends Expression<T>, R> {
-    default Either<T, T> completed(Collection<T> expressions) {
-      return expressions.stream()
-              .map(it -> Map.entry(it, this.completedOne(it)))
-              .filter(it -> it.getValue() != TriStateBoolean.UNDEFINED)
-              .findFirst()
-              .map(it -> new Either<>(it.getValue() == TriStateBoolean.TRUE, it.getKey(), it.getKey()))
-              .orElse(null);
+    /**
+     * Whether the partially completed rules can be evaluated for completion, via {@link #isCompleted(T)}.
+     */
+    default boolean supportPartiallyCompleted() {
+      return false;
     }
 
-    TriStateBoolean completedOne(T expression);
+    /**
+     * Determine whether the specified expression is completed.
+     *
+     * @param expression Input expression
+     * @return {@link TriStateBoolean#UNDEFINED} if the result still cannot be decided.
+     * Otherwise use {@link com.sohoffice.security.authorization.io.AuthStatement#effect()} to determine the result.
+     */
+    TriStateBoolean isCompleted(T expression);
 
-    R resultMapper(Either<T, T> expression);
+    /**
+     * Convert the internal result to the final result.
+     *
+     * @param internalResult Internal result
+     * @return The converted final results
+     */
+    R resultMapper(Either<T, T> internalResult);
   }
 
   /**
@@ -218,7 +247,7 @@ class IncrementalEvaluator<T extends Expression<T>, R> {
 
     public InternalContext<T> withExpressions(Map<Boolean, Set<T>> enhanceMap) {
       return withExpressions(enhanceMap.getOrDefault(Boolean.TRUE, Collections.emptySet()),
-              enhanceMap.getOrDefault(Boolean.FALSE, Collections.emptySet()));
+                             enhanceMap.getOrDefault(Boolean.FALSE, Collections.emptySet()));
     }
 
     public InternalContext<T> withExpressions(Set<T> enhanced2, Set<T> toBeEnhanced2) {

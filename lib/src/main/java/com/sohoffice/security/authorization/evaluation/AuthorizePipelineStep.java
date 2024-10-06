@@ -81,6 +81,11 @@ public class AuthorizePipelineStep implements AuthPipelineStep {
               .collect(Collectors.toUnmodifiableSet());
     }
 
+    @Override
+    public boolean supportPartiallyCompleted() {
+      return true;
+    }
+
     /**
      * Advise the result based on the auth statement object.
      *
@@ -90,7 +95,7 @@ public class AuthorizePipelineStep implements AuthPipelineStep {
      * Otherwise, return UNDEFINED.
      */
     @Override
-    public TriStateBoolean completedOne(AuthStatementToEvaluate expression) {
+    public TriStateBoolean isCompleted(AuthStatementToEvaluate expression) {
       boolean principalMatched = expression.principals().stream()
               .filter(StringMatchableExpression::isFullyEnhanced)
               .map(StringMatchableExpression::toMatchable)
@@ -138,10 +143,10 @@ public class AuthorizePipelineStep implements AuthPipelineStep {
     }
 
     @Override
-    public AuthorizePipeStepResult resultMapper(Either<AuthStatementToEvaluate, AuthStatementToEvaluate> expression) {
-      String identifier = (expression.successful()) ?
-              expression.success().statement().identifier() : expression.failure().statement().identifier();
-      return new AuthorizePipeStepResult(identifier, expression.successful());
+    public AuthorizePipeStepResult resultMapper(Either<AuthStatementToEvaluate, AuthStatementToEvaluate> internalResult) {
+      String identifier = (internalResult.successful()) ?
+              internalResult.success().statement().identifier() : internalResult.failure().statement().identifier();
+      return new AuthorizePipeStepResult(identifier, internalResult.successful());
     }
   }
 }

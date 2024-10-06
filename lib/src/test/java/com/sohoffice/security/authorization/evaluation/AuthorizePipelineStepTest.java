@@ -110,4 +110,17 @@ class AuthorizePipelineStepTest {
     assertThat(res4.status()).isEqualTo(AuthPipelineStepResultStatus.AUTHORIZED);
     assertThat(res4.statementId()).isEqualTo("stmt4");
   }
+
+  @Test
+  void execute_WhenMatchedDenyRule_ThenDeny() {
+    AuthContext context = AuthContextBuilder.builder(baseContext)
+            .request(new AuthRequest(Set.of(new AuthRequestTarget("resources/resource1", "actions/action1"))))
+            .principals(Set.of("principals/blacklist"))
+            .profileContributors(List.of())
+            .build();
+    AuthPipelineStepResult res5 = underTest.execute(context);
+    assertThat(res5).isNotNull();
+    assertThat(res5.status()).isEqualTo(AuthPipelineStepResultStatus.STOP);
+    assertThat(res5.statementId()).isEqualTo("stmt0");
+  }
 }

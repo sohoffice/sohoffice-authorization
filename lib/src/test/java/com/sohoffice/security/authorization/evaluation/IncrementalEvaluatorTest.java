@@ -143,14 +143,14 @@ class IncrementalEvaluatorTest {
 
   private static class AlwaysContinueAdapter implements IncrementalEvaluator.EvaluationResultAdapter<AuthRequestTargetToEvaluate, AuthRequestTargetToEvaluate> {
     @Override
-    public TriStateBoolean completedOne(AuthRequestTargetToEvaluate expression) {
+    public TriStateBoolean isCompleted(AuthRequestTargetToEvaluate expression) {
       return TriStateBoolean.UNDEFINED;
     }
 
     @Override
     public AuthRequestTargetToEvaluate resultMapper(
-            Either<AuthRequestTargetToEvaluate, AuthRequestTargetToEvaluate> expression) {
-      return expression.success();
+            Either<AuthRequestTargetToEvaluate, AuthRequestTargetToEvaluate> internalResult) {
+      return internalResult.success();
     }
   }
 
@@ -162,7 +162,7 @@ class IncrementalEvaluatorTest {
     }
 
     @Override
-    public TriStateBoolean completedOne(AuthRequestTargetToEvaluate expression) {
+    public TriStateBoolean isCompleted(AuthRequestTargetToEvaluate expression) {
       return expression.isFullyEnhanced() &&
               Objects.equals(expression.resource().getValue(),
                              expected) ? TriStateBoolean.TRUE : TriStateBoolean.UNDEFINED;
@@ -170,8 +170,8 @@ class IncrementalEvaluatorTest {
 
     @Override
     public TriStateBoolean resultMapper(
-            Either<AuthRequestTargetToEvaluate, AuthRequestTargetToEvaluate> res) {
-      return (res.successful()) ? TriStateBoolean.TRUE : TriStateBoolean.FALSE;
+            Either<AuthRequestTargetToEvaluate, AuthRequestTargetToEvaluate> internalResult) {
+      return (internalResult.successful()) ? TriStateBoolean.TRUE : TriStateBoolean.FALSE;
     }
   }
 }
