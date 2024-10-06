@@ -5,10 +5,11 @@ import com.sohoffice.security.authorization.exceptions.NotFullyEnhancedException
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * A combination of {@link StringExpression} and {@link StringMatchable}.
- * <p/>
+ * <p>
  * The input will first be enhanced with variables. Once fully enhanced it can be used to do matching.
  */
 public class StringMatchableExpression implements Expression<StringMatchableExpression> {
@@ -75,7 +76,7 @@ public class StringMatchableExpression implements Expression<StringMatchableExpr
 
   @Override
   public String toString() {
-    return List.of("expression=" + expression, "matchable=" + matchable).stream()
+    return Stream.of("expression=" + expression, "matchable=" + matchable)
             .collect(Collectors.joining(", ", "SME{", "}"));
   }
 }

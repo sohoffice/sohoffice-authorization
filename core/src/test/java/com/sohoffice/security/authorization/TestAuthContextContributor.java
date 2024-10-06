@@ -10,7 +10,7 @@ public class TestAuthContextContributor implements AuthContextContributor {
   private final String id;
   private final Set<Map.Entry<String, String>> attributes;
 
-  public TestAuthContextContributor(String id, Map.Entry<String, String>... attrs) {
+  public TestAuthContextContributor(String id, Map.Entry... attrs) {
     this.id = id;
     this.attributes = Set.of(attrs);
   }

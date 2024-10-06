@@ -1,13 +1,12 @@
 package com.sohoffice.security.authorization.evaluation;
 
-import com.sohoffice.security.authorization.util.StringExpression;
 import com.sohoffice.security.authorization.util.StringMatchableExpression;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
 import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AuthStatementToEvaluateTest {
 

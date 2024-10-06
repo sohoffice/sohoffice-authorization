@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 
 /**
  * This pipeline step will get inputs from context and use it to evaluate whether the access request should be granted.
- * <p/>
+ * <p>
  * Inputs:
  * <ul>
  *   <li> Authorization statements from {@link AuthContext#authStatementProvider()} </li>
@@ -60,7 +60,7 @@ public class AuthorizePipelineStep implements AuthPipelineStep {
     return new AuthPipelineStepResult(nextStatus, result.context(), statementId);
   }
 
-  private static record AuthorizePipeStepResult(
+  private record AuthorizePipeStepResult(
           String statementId,
           boolean result
   ) {
@@ -124,14 +124,20 @@ public class AuthorizePipelineStep implements AuthPipelineStep {
           AuthEffect effect = expression.statement().effect();
           switch (effect) {
             case ALLOW:
-              logger.info("Access granted by statement: {}", expression.statement().identifier());
+              if (logger.isInfoEnabled()) {
+                logger.info("Access granted by statement: {}", expression.statement().identifier());
+              }
               return TriStateBoolean.TRUE;
             case DENY:
-              logger.info("Access denied by statement: {}", expression.statement().identifier());
+              if (logger.isInfoEnabled()) {
+                logger.info("Access denied by statement: {}", expression.statement().identifier());
+              }
               return TriStateBoolean.FALSE;
             case null:
             default:
-              logger.warn("Unknown effect '{}' in auth statement: {}", effect, expression.statement().identifier());
+              if (logger.isWarnEnabled()) {
+                logger.warn("Unknown effect '{}' in auth statement: {}", effect, expression.statement().identifier());
+              }
               return TriStateBoolean.UNDEFINED;
           }
         } else {
@@ -143,7 +149,8 @@ public class AuthorizePipelineStep implements AuthPipelineStep {
     }
 
     @Override
-    public AuthorizePipeStepResult resultMapper(Either<AuthStatementToEvaluate, AuthStatementToEvaluate> internalResult) {
+    public AuthorizePipeStepResult resultMapper(
+            Either<AuthStatementToEvaluate, AuthStatementToEvaluate> internalResult) {
       String identifier = (internalResult.successful()) ?
               internalResult.success().statement().identifier() : internalResult.failure().statement().identifier();
       return new AuthorizePipeStepResult(identifier, internalResult.successful());

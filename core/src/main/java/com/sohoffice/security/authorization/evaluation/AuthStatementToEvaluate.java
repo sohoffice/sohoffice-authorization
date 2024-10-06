@@ -2,7 +2,6 @@ package com.sohoffice.security.authorization.evaluation;
 
 import com.sohoffice.security.authorization.io.AuthStatement;
 import com.sohoffice.security.authorization.util.Expression;
-import com.sohoffice.security.authorization.util.Expressions;
 import com.sohoffice.security.authorization.util.StringMatchableExpression;
 
 import java.util.Map;
@@ -25,7 +24,7 @@ public record AuthStatementToEvaluate(
         Set<StringMatchableExpression> principals,
         Set<StringMatchableExpression> actions,
         AuthStatement statement
-) implements Expressions<AuthStatementToEvaluate> {
+) implements Expression<AuthStatementToEvaluate> {
   @Override
   public AuthStatementToEvaluate enhance(Map.Entry<String, String> attribute) {
     return new AuthStatementToEvaluate(
@@ -59,16 +58,6 @@ public record AuthStatementToEvaluate(
             .filter(Predicate.not(StringMatchableExpression::isFullyEnhanced))
             .findAny()
             .isEmpty();
-  }
-
-  /**
-   * @return Return True if any combination of principals, resources, and actions are fully enhanced.
-   */
-  @Override
-  public boolean isPartiallyCompleted() {
-    return principals().stream().anyMatch(Predicate.not(StringMatchableExpression::isFullyEnhanced)) &&
-            resources().stream().anyMatch(Predicate.not(StringMatchableExpression::isFullyEnhanced)) &&
-            actions().stream().anyMatch(Predicate.not(StringMatchableExpression::isFullyEnhanced));
   }
 
   /**

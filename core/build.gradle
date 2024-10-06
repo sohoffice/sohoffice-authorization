@@ -45,4 +45,17 @@ java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(21)
     }
+    withSourcesJar()
+    withJavadocJar()
+}
+
+afterEvaluate {
+    publishing {
+        publications {
+            maven(MavenPublication) {
+                artifactId 'sohoffice-authorization-core'
+                from components.java
+            }
+        }
+    }
 }
