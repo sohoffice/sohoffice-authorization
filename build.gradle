@@ -2,5 +2,7 @@ plugins {
     id 'maven-publish'
 }
 
-group = 'com.sohoffice.authorization'
-version = '0.0.1-SNAPSHOT'
+allprojects {
+    group = 'com.sohoffice.authorization'
+    version = '0.0.1-SNAPSHOT'
+}
