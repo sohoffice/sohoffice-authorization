@@ -7,3 +7,15 @@ allprojects {
     group = 'com.sohoffice.authorization'
 }
 
+task afterRelease {
+    doLast {
+        println("project version: "+project.version)
+    }
+}
+
+afterReleaseBuild.dependsOn afterRelease
+
+release {
+    failOnCommitNeeded = false
+    failOnPublishNeeded = false
+}
