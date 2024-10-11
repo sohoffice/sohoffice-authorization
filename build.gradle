@@ -7,3 +7,8 @@ allprojects {
     group = 'com.sohoffice.authorization'
     version = '0.0.1-SNAPSHOT'
 }
+
+release {
+    failOnCommitNeeded = false
+    failOnPublishNeeded = false
+}
