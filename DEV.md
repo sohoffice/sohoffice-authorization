@@ -6,13 +6,14 @@ This document contains notes for developers working on the project.
 Coding style
 ------------
 
-The project uses [editorconfig](https://editorconfig.org/) to enforce a consistent coding style. Please make sure your editor supports it.
+The project uses [editorconfig](https://editorconfig.org/) to enforce a consistent coding style. Please make sure your
+editor supports it.
 
 Naming conventions
 ------------------
 
 - No all capital abbreviations in class names. For example, use `Abac` instead of `ABAC`.
-- In unit test cases, use the method naming style: ```<MethodUnderTest>_<Condition>_<Scenario>_<ExpectedResult>```. 
+- In unit test cases, use the method naming style: ```<MethodUnderTest>_<Condition>_<Scenario>_<ExpectedResult>```.
   For example, `evaluatePolicy_GivenSingleRequest_WhenPolicyIsTrue_ThenReturnsTrue`.
 
 Release
@@ -29,6 +30,9 @@ If running manually a few questions must be answered:
 - The version to be released. Ex: 1.0.0
 - The next version to be developed. Ex: 1.0.1-SNAPSHOT
 
+Release tag will be named in the format `v<version>`. For example, `v1.0.0`. It will be automatically created by the
+release plugin.
+
 Publish
 -------
 
@@ -39,9 +43,4 @@ To publish a new snapshot version, run the following command:
 ./gradlew publish
 ```
 
-To publish a new release version, switch to the release tag first and publish.
-
-```bash
-git checkout 1.0.0
-./gradlew publish
-```
+Release version will be published by the release process. No extra steps are needed.

@@ -17,6 +17,5 @@ afterReleaseBuild.dependsOn afterRelease
 afterReleaseBuild.dependsOn publish
 
 release {
-    failOnCommitNeeded = false
-    failOnPublishNeeded = false
+    tagTemplate = 'v${version}'
 }
