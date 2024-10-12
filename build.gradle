@@ -15,7 +15,3 @@ task afterRelease {
 
 afterReleaseBuild.dependsOn afterRelease
 afterReleaseBuild.dependsOn publish
-
-release {
-    tagTemplate = 'v${version}'
-}
