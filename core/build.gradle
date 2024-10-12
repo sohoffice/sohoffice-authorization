@@ -101,3 +101,5 @@ release {
     tagTemplate = '${name}-v${version}'
     versionPropertyFile = 'version.properties'
 }
+
+afterReleaseBuild.dependsOn publish
