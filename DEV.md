@@ -19,19 +19,32 @@ Naming conventions
 Release
 -------
 
-This project uses Gradle release plugin to manage releases. To release a new version, run the following command:
+This project uses Gradle release plugin to manage releases.
+
+The root project is only a blanket, and only the sub projects can be released.
+For example, to release a new version on "core", run the following command:
 
 ```bash
-./gradlew release
+./gradlew :core:release
 ```
 
 If running manually a few questions must be answered:
 
-- The version to be released. Ex: 1.0.0
+- The version to be released. Ex: `1.0.0`
+
+  The value will be automatically determined through version value in current version.properties file.
+  In the simplest form, `-SNAPSHOT` is removed from the version.
 - The next version to be developed. Ex: 1.0.1-SNAPSHOT
 
-Release tag will be named in the format `v<version>`. For example, `v1.0.0`. It will be automatically created by the
-release plugin.
+  This is also calculated fro the version value in the version.properties file.
+  The number is increased at the patch level.
+
+Release tag will be named in the format `<name>-v<version>`. For example, `core-v1.0.0`.
+It will be automatically created by the release plugin.
+
+### Increase major or minor version
+
+To increase major or minor version, do it manually via version.properties file before running the release command.
 
 Publish
 -------
@@ -43,4 +56,4 @@ To publish a new snapshot version, run the following command:
 ./gradlew publish
 ```
 
-Release version will be published by the release process. No extra steps are needed.
+Release version will be published by the release process. No extra steps are needed to publish.

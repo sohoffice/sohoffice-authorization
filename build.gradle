@@ -7,8 +7,6 @@ allprojects {
     group = 'com.sohoffice.authorization'
 }
 
-afterReleaseBuild.dependsOn publish
-
 project.tasks.getByName("release").configure {
     // release task should not be executed on root project
     enabled = false
