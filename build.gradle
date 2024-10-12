@@ -8,3 +8,7 @@ allprojects {
 }
 
 afterReleaseBuild.dependsOn publish
+
+release {
+    revertOnFail = false
+}
