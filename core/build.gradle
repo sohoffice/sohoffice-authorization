@@ -54,6 +54,12 @@ publishing {
     publications {
         mavenJava(MavenPublication) {
             artifactId 'sohoffice-authorization-core'
+            // read version from version.properties (created by release plugin)
+            def props = new Properties()
+            file("version.properties").withInputStream { props.load(it) }
+            println("version: " + props.getProperty("version"))
+            version = props.getProperty("version")
+
             from components.java
             pom {
                 name = 'sohoffice-authorization core Library'
@@ -92,7 +98,6 @@ publishing {
 }
 
 release {
-    failOnCommitNeeded = false
-    failOnPublishNeeded = false
     tagTemplate = '${name}-v${version}'
+    versionPropertyFile = 'version.properties'
 }
