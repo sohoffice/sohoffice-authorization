@@ -5,13 +5,13 @@ plugins {
 
 allprojects {
     group = 'com.sohoffice.authorization'
-}
 
-task afterRelease {
-    doLast {
-        println("project version: "+project.version)
+    task afterRelease {
+        doLast {
+            println("project version: "+project.version)
+        }
     }
-}
 
-afterReleaseBuild.dependsOn afterRelease
-afterReleaseBuild.dependsOn publish
+    afterReleaseBuild.dependsOn afterRelease
+    afterReleaseBuild.dependsOn publish
+}
