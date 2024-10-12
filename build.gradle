@@ -9,6 +9,6 @@ allprojects {
 
 afterReleaseBuild.dependsOn publish
 
-release {
-    revertOnFail = false
+release.configure {
+    enabled = false
 }
