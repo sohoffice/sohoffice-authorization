@@ -1,13 +1,8 @@
 plugins {
     id 'maven-publish'
-    id 'net.researchgate.release' version '3.0.2'
 }
 
 allprojects {
     group = 'com.sohoffice.authorization'
 }
 
-project.tasks.getByName("release").configure {
-    // release task should not be executed on root project
-    enabled = false
-}
