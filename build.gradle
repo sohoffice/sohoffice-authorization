@@ -9,6 +9,6 @@ allprojects {
 
 afterReleaseBuild.dependsOn publish
 
-release.configure {
-    enabled = false
+project.tasks.getByName("release").configure {
+    throw new StopExecutionException("release task should not be executed on root project")
 }
