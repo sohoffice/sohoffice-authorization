@@ -11,6 +11,8 @@ plugins {
     id 'java-library'
     id 'maven-publish'
     id 'net.researchgate.release' version '3.0.2'
+    id 'jacoco'
+    id 'org.sonarqube' version '3.5.0.2730'
 }
 
 repositories {
@@ -105,3 +107,11 @@ release {
 }
 
 afterReleaseBuild.dependsOn publish
+
+// Jacoco Coverage
+jacocoTestReport.dependsOn test // tests are required to run before generating the report
+jacocoTestReport {
+    reports {
+        xml.required = true
+    }
+}
