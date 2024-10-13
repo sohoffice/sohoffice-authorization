@@ -10,9 +10,9 @@ plugins {
     // Apply the java-library plugin for API and implementation separation.
     id 'java-library'
     id 'maven-publish'
-    id 'net.researchgate.release' version '3.0.2'
+    id 'net.researchgate.release'
     id 'jacoco'
-    id 'org.sonarqube' version '3.5.0.2730'
+    id 'org.sonarqube'
 }
 
 repositories {

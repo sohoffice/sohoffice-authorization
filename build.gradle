@@ -1,8 +1,17 @@
 plugins {
     id 'maven-publish'
+    id 'net.researchgate.release' version '3.0.2' apply false
+    id 'org.sonarqube' version "5.1.0.4882"
 }
 
 allprojects {
     group = 'com.sohoffice.authorization'
 }
 
+sonar {
+    properties {
+        property "sonar.projectKey", "sohoffice_sohoffice-authorization"
+        property "sonar.organization", "sohoffice"
+        property "sonar.host.url", "https://sonarcloud.io"
+    }
+}
