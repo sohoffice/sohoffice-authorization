@@ -8,8 +8,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class SimpleStringExpressionTest {
 
-  private final Map<String, String> context = Map.of("name", "world", "foo", "bar");
-
   @Test
   void expand() {
     SimpleStringExpression expandable1 = new SimpleStringExpression("Hello, ${name}!");
@@ -45,7 +43,8 @@ class SimpleStringExpressionTest {
     SimpleStringExpression dynamic2 = new SimpleStringExpression("Hello, ${name}!");
     assertEquals(dynamic1, dynamic2);
 
-    assertEquals(dynamic1.withAttribute(Map.entry("name", "world")), dynamic2.withAttribute(Map.entry("name", "world")));
+    assertEquals(dynamic1.withAttribute(Map.entry("name", "world")),
+                 dynamic2.withAttribute(Map.entry("name", "world")));
 
     assertNotEquals(dynamic1.withAttribute(Map.entry("name", "world")), dynamic2);
   }
