@@ -121,22 +121,22 @@ public class AuthorizePipelineStep implements AuthPipelineStep {
           logger.debug("Action matched: {}, request: {}, auth: {}", actionMatched, actions, expression.actions());
         }
         if (resourceMatched && actionMatched) {
-          AuthEffect effect = expression.statement().effect();
+          AuthEffect effect = expression.statement().getEffect();
           switch (effect) {
             case ALLOW:
               if (logger.isInfoEnabled()) {
-                logger.info("Access granted by statement: {}", expression.statement().identifier());
+                logger.info("Access granted by statement: {}", expression.statement().getIdentifier());
               }
               return TriStateBoolean.TRUE;
             case DENY:
               if (logger.isInfoEnabled()) {
-                logger.info("Access denied by statement: {}", expression.statement().identifier());
+                logger.info("Access denied by statement: {}", expression.statement().getIdentifier());
               }
               return TriStateBoolean.FALSE;
             case null:
             default:
               if (logger.isWarnEnabled()) {
-                logger.warn("Unknown effect '{}' in auth statement: {}", effect, expression.statement().identifier());
+                logger.warn("Unknown effect '{}' in auth statement: {}", effect, expression.statement().getIdentifier());
               }
               return TriStateBoolean.UNDEFINED;
           }
@@ -152,7 +152,7 @@ public class AuthorizePipelineStep implements AuthPipelineStep {
     public AuthorizePipeStepResult resultMapper(
             Either<AuthStatementToEvaluate, AuthStatementToEvaluate> internalResult) {
       String identifier = (internalResult.successful()) ?
-              internalResult.success().statement().identifier() : internalResult.failure().statement().identifier();
+              internalResult.success().statement().getIdentifier() : internalResult.failure().statement().getIdentifier();
       return new AuthorizePipeStepResult(identifier, internalResult.successful());
     }
   }

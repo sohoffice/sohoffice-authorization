@@ -13,3 +13,4 @@ plugins {
 
 rootProject.name = 'sohoffice-authorization'
 include('core')
+include(':adapters:spring-boot-web')

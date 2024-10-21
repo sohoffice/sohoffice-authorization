@@ -12,13 +12,13 @@ import java.util.List;
  * If one of the components is empty, it means it is a wildcard and any value will match.
  */
 public interface AuthStatement {
-  List<String> resources();
+  List<String> getResourcesList();
 
-  List<String> principals();
+  List<String> getPrincipalsList();
 
-  List<String> actions();
+  List<String> getActionsList();
 
-  AuthEffect effect();
+  AuthEffect getEffect();
 
-  String identifier();
+  String getIdentifier();
 }

@@ -210,7 +210,7 @@ class IncrementalEvaluator<T extends Expression<T>, R> {
      *
      * @param expression Input expression
      * @return {@link TriStateBoolean#UNDEFINED} if the result still cannot be decided.
-     * Otherwise use {@link com.sohoffice.security.authorization.io.AuthStatement#effect()} to determine the result.
+     * Otherwise use {@link com.sohoffice.security.authorization.io.AuthStatement#getEffect()} to determine the result.
      */
     TriStateBoolean isCompleted(T expression);
 

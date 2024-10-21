@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package proto;
+
+option java_package = "com.sohoffice.security.authorization.io";
+option java_multiple_files = true;
+
+
+// This determines the effect of a statement
+enum AuthEffect {
+  // Access is granted
+  ALLOW = 0;
+  // Access is denied, not implemented yet
+  DENY = 1;
+}
+
+message AuthStatementPb {
+  repeated string resources = 1;
+  repeated string principals = 2;
+  repeated string actions = 3;
+  AuthEffect effect = 4;
+  string identifier = 5;
+}

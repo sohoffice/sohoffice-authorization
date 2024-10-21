@@ -6,10 +6,10 @@ import com.sohoffice.security.authorization.io.AuthStatement;
 import java.util.List;
 
 public record AuthStatementV1(
-        List<String> resources,
-        List<String> principals,
-        List<String> actions,
-        AuthEffect effect,
-        String identifier
+        List<String> getResourcesList,
+        List<String> getPrincipalsList,
+        List<String> getActionsList,
+        AuthEffect getEffect,
+        String getIdentifier
 ) implements AuthStatement {
 }

@@ -10,6 +10,8 @@ logback = "1.5.6"
 jetbrains-annotations = "24.0.0"
 record-builder-processor = "42"
 asserj = "3.26.3"
+junit-jupiter = '5.10.0'
+protobuf = "4.28.2"
 
 [libraries]
 commons-math3 = { module = "org.apache.commons:commons-math3", version.ref = "commons-math3" }
@@ -20,8 +22,14 @@ logback = { module = 'ch.qos.logback:logback-classic', version.ref = 'logback' }
 jetbrains-annotations = { module = 'org.jetbrains:annotations', version.ref = 'jetbrains-annotations' }
 record-builder-processor = { module = "io.soabase.record-builder:record-builder-processor", version.ref = "record-builder-processor" }
 assertj-core = { module = "org.assertj:assertj-core", version.ref = "asserj" }
+protobuf-java = {module = "com.google.protobuf:protobuf-java", version.ref = "protobuf"}
+protobuf-java-util = {module = "com.google.protobuf:protobuf-java-util", version.ref = "protobuf"}
 
 [bundles]
 slf4j = ["slf4japi"]
 slf4j-test = ["logback"]
 assertj = ["assertj-core"]
+protobuf = ["protobuf-java", "protobuf-java-util"]
+
+[plugins]
+protobuf = { id = "com.google.protobuf", version="0.9.4" }

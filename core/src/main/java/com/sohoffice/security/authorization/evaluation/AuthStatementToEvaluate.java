@@ -67,13 +67,13 @@ public record AuthStatementToEvaluate(
    */
   public static AuthStatementToEvaluate ofAuthStatement(AuthStatement stmt) {
     return new AuthStatementToEvaluate(
-            stmt.resources().stream()
+            stmt.getResourcesList().stream()
                     .map(StringMatchableExpression::new)
                     .collect(Collectors.toSet()),
-            stmt.principals().stream()
+            stmt.getPrincipalsList().stream()
                     .map(StringMatchableExpression::new)
                     .collect(Collectors.toSet()),
-            stmt.actions().stream()
+            stmt.getActionsList().stream()
                     .map(StringMatchableExpression::new)
                     .collect(Collectors.toSet()),
             stmt);
